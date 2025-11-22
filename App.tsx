@@ -6,11 +6,11 @@ import DrawingCanvas from './components/DrawingCanvas';
 import { generateImageFromText, generateCreativeImage, editImage, generateVideo, analyzeCost } from './services/geminiService';
 import { Type, Image as ImageIcon, Edit3, Film, Grid, DollarSign, Loader2, Download } from 'lucide-react';
 
-// Reusable Red Title Block
+// Reusable Red Title Block - Updated for Red Background with Black Text
 const SectionTitle: React.FC<{ title: string, sub: string }> = ({ title, sub }) => (
   <div className="mb-6 inline-block">
-    <h2 className="bg-mr-red text-white px-4 py-2 text-lg font-zongyi tracking-wider shadow-md">
-      {title} <span className="text-xs font-sans opacity-80 ml-1">{sub}</span>
+    <h2 className="bg-mr-red text-black px-4 py-2 text-lg font-zongyi tracking-wider shadow-md">
+      {title} <span className="text-xs font-sans opacity-80 ml-1 text-slate-900">{sub}</span>
     </h2>
   </div>
 );

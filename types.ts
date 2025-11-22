@@ -35,6 +35,8 @@ export interface CostAnalysisData {
   renovationDetails?: string;
 }
 
+// Augment the global Window interface
+// AIStudio is defined in the global scope to allow interface merging if it exists elsewhere
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
