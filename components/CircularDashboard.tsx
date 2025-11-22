@@ -41,6 +41,16 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
         .orbit-container:hover .animate-orbit-reverse {
           animation-play-state: paused;
         }
+        
+        /* Responsive Radius Variables */
+        :root {
+           --orbit-radius: 140px;
+        }
+        @media (min-width: 768px) {
+           :root {
+              --orbit-radius: 220px;
+           }
+        }
       `}</style>
 
       {/* Decorative subtle architectural lines */}
@@ -50,7 +60,7 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
           <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 border border-slate-900 rounded-full"></div>
       </div>
 
-      <div className="relative w-[350px] h-[350px] md:w-[500px] md:h-[500px] flex items-center justify-center orbit-container">
+      <div className="relative w-[350px] h-[350px] md:w-[600px] md:h-[600px] flex items-center justify-center orbit-container">
         
         {/* Center Logo (Static) */}
         <div className="absolute z-20 flex flex-col items-center justify-center text-center p-6 bg-white rounded-full shadow-xl border-4 border-slate-100 w-48 h-48 md:w-64 md:h-64">
@@ -73,8 +83,8 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
                     key={item.id}
                     className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center pointer-events-auto"
                     style={{
-                        // Position the anchor point
-                        transform: `rotate(${angle}deg) translate(140px) rotate(${-angle}deg)`,
+                        // Position the anchor point using CSS variable for responsive radius
+                        transform: `rotate(${angle}deg) translate(var(--orbit-radius)) rotate(${-angle}deg)`,
                     }}
                 >
                     <button

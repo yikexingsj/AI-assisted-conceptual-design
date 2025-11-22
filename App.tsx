@@ -42,6 +42,12 @@ function App() {
   });
   const [costResult, setCostResult] = useState<string | null>(null);
 
+  const handleError = (e: any) => {
+    console.error(e);
+    const msg = e instanceof Error ? e.message : "Unknown error occurred";
+    alert(`Error: ${msg}\n\nIf deploying, check your API Key configuration.`);
+  };
+
   const addToGallery = (type: 'image' | 'text', content: string, promptText: string) => {
     setGeneratedItems(prev => [{
       id: Date.now().toString(),
@@ -62,8 +68,7 @@ function App() {
       setResult(url);
       addToGallery('image', url, prompt);
     } catch (e) {
-      alert("Generation failed. Please check API Key or Quota.");
-      console.error(e);
+      handleError(e);
     } finally {
       setLoading(false);
     }
@@ -91,8 +96,7 @@ function App() {
       setResult(url);
       addToGallery('image', url, prompt);
     } catch (e) {
-       alert("Generation failed.");
-       console.error(e);
+       handleError(e);
     } finally {
       setLoading(false);
     }
@@ -108,8 +112,7 @@ function App() {
       setResult(url);
       addToGallery('image', url, prompt);
     } catch (e) {
-      alert("Edit failed.");
-      console.error(e);
+      handleError(e);
     } finally {
       setLoading(false);
     }
@@ -123,8 +126,7 @@ function App() {
         setCostResult(result);
         addToGallery('text', result, costData.type === 'new' ? 'New Construction Cost Analysis' : 'Renovation Cost Table');
     } catch (e) {
-        alert("Analysis failed");
-        console.error(e);
+        handleError(e);
     } finally {
         setLoading(false);
     }
