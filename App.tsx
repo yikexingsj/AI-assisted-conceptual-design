@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ViewState, AspectRatio, GeneratedItem } from './types';
+import { ViewState, AspectRatio, GeneratedItem, CostAnalysisData } from './types';
 import CircularDashboard from './components/CircularDashboard';
 import ModuleLayout from './components/ModuleLayout';
 import DrawingCanvas from './components/DrawingCanvas';
-import { generateImageFromText, generateCreativeImage, editImage, analyzeCost } from './services/geminiService';
-import { Type, Image as ImageIcon, Edit3, Grid, DollarSign, Loader2, Download } from 'lucide-react';
+import { generateImageFromText, generateCreativeImage, editImage, generateCostAnalysis } from './services/geminiService';
+import { Type, Image as ImageIcon, Edit3, Grid, Loader2, Download, Calculator } from 'lucide-react';
 
 // Reusable Red Title Block - Updated for Red Background with Black Text
 const SectionTitle: React.FC<{ title: string, sub: string }> = ({ title, sub }) => (
@@ -30,16 +30,23 @@ function App() {
   const [img1, setImg1] = useState<string | null>(null);
   const [img2, setImg2] = useState<string | null>(null);
 
-  // Cost States
-  const [costMode, setCostMode] = useState<'new'|'renovation'>('new');
-  const [costData, setCostData] = useState<any>({}); // Form data
-  const [costResult, setCostResult] = useState<any>(null);
+  // Cost Analysis State
+  const [costData, setCostData] = useState<CostAnalysisData>({
+    type: 'new',
+    aboveGroundArea: '',
+    undergroundArea: '',
+    floors: '',
+    structure: '',
+    facade: '',
+    renovationScope: ''
+  });
+  const [costResult, setCostResult] = useState<string | null>(null);
 
   const addToGallery = (type: 'image' | 'text', content: string, promptText: string) => {
     setGeneratedItems(prev => [{
       id: Date.now().toString(),
       type,
-      content: type === 'text' ? undefined : content, // For text result (cost), content might be the JSON string
+      content: type === 'text' ? content : undefined,
       url: type === 'text' ? undefined : content,
       timestamp: Date.now(),
       prompt: promptText
@@ -112,30 +119,14 @@ function App() {
     setLoading(true);
     setCostResult(null);
     try {
-      let constructionPrompt = "";
-      if (costMode === 'new') {
-        constructionPrompt = `Perform a cost analysis for a NEW building with: 
-        Above ground: ${costData.above || 0} sqm. 
-        Under ground: ${costData.under || 0} sqm.
-        Floors: ${costData.floors || 1}.
-        Structure: ${costData.structure || 'Concrete'}.
-        Facade: ${costData.facade || 'Glass'}.`;
-      } else {
-        constructionPrompt = `Perform a renovation cost estimate based on standard market rates for: ${costData.renovationDesc || 'General renovation'}`;
-      }
-      
-      const jsonStr = await analyzeCost(constructionPrompt);
-      try {
-         const data = JSON.parse(jsonStr);
-         setCostResult(data);
-         addToGallery('text', JSON.stringify(data), constructionPrompt);
-      } catch (e) {
-        setCostResult({ summary: "Error parsing data", breakdown: [] });
-      }
+        const result = await generateCostAnalysis(costData);
+        setCostResult(result);
+        addToGallery('text', result, costData.type === 'new' ? 'New Construction Cost Analysis' : 'Renovation Cost Table');
     } catch (e) {
-      alert("Analysis failed");
+        alert("Analysis failed");
+        console.error(e);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -255,65 +246,80 @@ function App() {
     <div className="grid md:grid-cols-2 gap-8">
       <div className="space-y-6">
         <SectionTitle title="造价分析" sub="Cost Analysis" />
-        <div className="flex gap-4 mb-4">
-           <button onClick={() => setCostMode('new')} className={`flex-1 py-2 border rounded ${costMode === 'new' ? 'bg-slate-800 text-white' : 'bg-white'}`}>New Construction</button>
-           <button onClick={() => setCostMode('renovation')} className={`flex-1 py-2 border rounded ${costMode === 'renovation' ? 'bg-slate-800 text-white' : 'bg-white'}`}>Renovation</button>
+        
+        <div className="flex border-b border-slate-200">
+          <button 
+            onClick={() => setCostData({...costData, type: 'new'})} 
+            className={`px-6 py-3 font-zongyi flex-1 ${costData.type === 'new' ? 'text-mr-red border-b-2 border-mr-red' : 'text-slate-500'}`}
+          >
+            新建建筑 New Build
+          </button>
+          <button 
+            onClick={() => setCostData({...costData, type: 'renovation'})} 
+            className={`px-6 py-3 font-zongyi flex-1 ${costData.type === 'renovation' ? 'text-mr-red border-b-2 border-mr-red' : 'text-slate-500'}`}
+          >
+            改造建筑 Renovation
+          </button>
         </div>
 
-        {costMode === 'new' ? (
-          <div className="grid grid-cols-2 gap-4">
-             <input type="number" placeholder="Above Ground Area (sqm)" className="p-2 border rounded" onChange={(e) => setCostData({...costData, above: e.target.value})} />
-             <input type="number" placeholder="Under Ground Area (sqm)" className="p-2 border rounded" onChange={(e) => setCostData({...costData, under: e.target.value})} />
-             <input type="number" placeholder="Floors" className="p-2 border rounded" onChange={(e) => setCostData({...costData, floors: e.target.value})} />
-             <select className="p-2 border rounded" onChange={(e) => setCostData({...costData, structure: e.target.value})}>
-               <option value="Concrete">Concrete Frame</option>
-               <option value="Steel">Steel Structure</option>
-               <option value="Wood">Wood</option>
-             </select>
-             <input type="text" placeholder="Facade Material" className="col-span-2 p-2 border rounded" onChange={(e) => setCostData({...costData, facade: e.target.value})} />
-          </div>
+        {costData.type === 'new' ? (
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">地上建筑面积 (㎡)</label>
+                        <input type="text" className="w-full border-slate-300 rounded-md" 
+                               value={costData.aboveGroundArea} onChange={e => setCostData({...costData, aboveGroundArea: e.target.value})} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">地下建筑面积 (㎡)</label>
+                        <input type="text" className="w-full border-slate-300 rounded-md" 
+                               value={costData.undergroundArea} onChange={e => setCostData({...costData, undergroundArea: e.target.value})} />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">建筑层数</label>
+                    <input type="text" className="w-full border-slate-300 rounded-md" 
+                           value={costData.floors} onChange={e => setCostData({...costData, floors: e.target.value})} />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">建筑结构</label>
+                    <input type="text" placeholder="如：钢筋混凝土框架结构" className="w-full border-slate-300 rounded-md" 
+                           value={costData.structure} onChange={e => setCostData({...costData, structure: e.target.value})} />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">建筑立面材料</label>
+                    <input type="text" placeholder="如：玻璃幕墙、石材" className="w-full border-slate-300 rounded-md" 
+                           value={costData.facade} onChange={e => setCostData({...costData, facade: e.target.value})} />
+                </div>
+            </div>
         ) : (
-          <textarea 
-            placeholder="Describe renovation requirements (e.g., remove wall, new flooring 50sqm...)"
-            className="w-full border rounded p-2 h-32"
-            onChange={(e) => setCostData({...costData, renovationDesc: e.target.value})}
-          />
+             <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">改造范围与要求描述</label>
+                    <textarea 
+                        className="w-full border-slate-300 rounded-md h-48 p-3"
+                        placeholder="例如：500平米办公室室内装修改造，包含拆除原有隔墙，新建玻璃隔断，铺设地毯，天花吊顶翻新..."
+                        value={costData.renovationScope}
+                        onChange={e => setCostData({...costData, renovationScope: e.target.value})}
+                    />
+                </div>
+            </div>
         )}
 
         <button onClick={handleCostAnalysis} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center">
-           {loading ? <Loader2 className="animate-spin mr-2" /> : "分析 Analyze"}
+           {loading ? <Loader2 className="animate-spin mr-2" /> : "开始分析 Analyze"}
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm overflow-auto max-h-[600px]">
+      <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 p-6 overflow-y-auto max-h-[600px]">
         {costResult ? (
-          <div className="space-y-4">
-             <h3 className="font-bold text-xl mb-2">Cost Breakdown</h3>
-             <p className="text-slate-600 italic">{costResult.summary}</p>
-             <div className="text-2xl font-zongyi text-mr-red text-right mb-4">
-               Total: {costResult.totalEstimatedCost}
+             <div className="prose prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed">
+                {costResult}
              </div>
-             <table className="w-full text-sm text-left">
-               <thead className="bg-slate-100">
-                 <tr>
-                   <th className="p-2">Item</th>
-                   <th className="p-2">Cost</th>
-                   <th className="p-2">Remark</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {costResult.breakdown?.map((item: any, i: number) => (
-                   <tr key={i} className="border-b">
-                     <td className="p-2 font-medium">{item.item}</td>
-                     <td className="p-2 text-mr-red">{item.cost}</td>
-                     <td className="p-2 text-slate-500">{item.remark}</td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-          </div>
         ) : (
-          <div className="h-full flex items-center justify-center text-slate-400">Analysis Report will appear here</div>
+             <div className="h-full flex items-center justify-center text-slate-400 font-zongyi">
+                Analysis Report Area
+             </div>
         )}
       </div>
     </div>
@@ -326,8 +332,9 @@ function App() {
         {generatedItems.map((item) => (
           <div key={item.id} className="group relative bg-white rounded-lg shadow overflow-hidden border border-slate-200">
             {item.type === 'text' ? (
-              <div className="w-full h-48 p-4 text-xs overflow-hidden bg-slate-50 text-slate-600">
-                {item.prompt}
+              <div className="w-full h-48 p-4 text-xs overflow-y-auto bg-slate-50 text-slate-600 whitespace-pre-wrap">
+                <div className="font-bold mb-2 border-b pb-1">{item.prompt}</div>
+                {item.content}
               </div>
             ) : (
               <img src={item.url} alt="Gen" className="w-full h-48 object-cover" />
@@ -373,7 +380,7 @@ function App() {
         currentView === ViewState.TEXT_CREATIVE ? <Type /> :
         currentView === ViewState.IMAGE_CREATIVE ? <ImageIcon /> :
         currentView === ViewState.IMAGE_EDIT ? <Edit3 /> :
-        currentView === ViewState.COST_ANALYSIS ? <DollarSign /> :
+        currentView === ViewState.COST_ANALYSIS ? <Calculator /> :
         <Grid />
       }
       onBack={goHome}

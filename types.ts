@@ -26,12 +26,12 @@ export interface GeneratedItem {
 
 export interface CostAnalysisData {
   type: 'new' | 'renovation';
-  aboveGroundArea?: number;
-  underGroundArea?: number;
-  floors?: number;
-  structure?: string;
-  facade?: string;
-  renovationDetails?: string;
+  aboveGroundArea: string;
+  undergroundArea: string;
+  floors: string;
+  structure: string;
+  facade: string;
+  renovationScope: string;
 }
 
 declare global {
