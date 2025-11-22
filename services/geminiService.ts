@@ -102,71 +102,7 @@ export const editImage = async (base64Image: string, prompt: string): Promise<st
   throw new Error("No image generated");
 };
 
-// 4. Animation (Veo)
-export const generateVideo = async (prompt: string, imageBase64?: string, lastFrameBase64?: string): Promise<string> => {
-  await ensureApiKey();
-  const ai = getAiClient();
-  
-  // Determine config based on inputs
-  const model = 'veo-3.1-fast-generate-preview';
-  
-  let operation;
-  
-  if (imageBase64 && lastFrameBase64) {
-    // First and Last frame
-    operation = await ai.models.generateVideos({
-      model,
-      prompt,
-      image: { imageBytes: imageBase64, mimeType: 'image/png' },
-      config: {
-        lastFrame: { imageBytes: lastFrameBase64, mimeType: 'image/png' },
-        numberOfVideos: 1,
-        resolution: '720p',
-        aspectRatio: '16:9'
-      }
-    });
-  } else if (imageBase64) {
-    // Image to Video
-    operation = await ai.models.generateVideos({
-      model,
-      prompt,
-      image: { imageBytes: imageBase64, mimeType: 'image/png' },
-      config: {
-        numberOfVideos: 1,
-        resolution: '720p',
-        aspectRatio: '16:9'
-      }
-    });
-  } else {
-    // Text to Video
-    operation = await ai.models.generateVideos({
-      model,
-      prompt,
-      config: {
-        numberOfVideos: 1,
-        resolution: '1080p',
-        aspectRatio: '16:9'
-      }
-    });
-  }
-
-  // Polling
-  while (!operation.done) {
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    operation = await ai.operations.getVideosOperation({ operation });
-  }
-
-  const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-  if (!downloadLink) throw new Error("Video generation failed");
-
-  // Fetch the actual video bytes
-  // Note: Guidelines say "You must append an API key when fetching from the download link."
-  const videoRes = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
-  const blob = await videoRes.blob();
-  return URL.createObjectURL(blob);
-};
-
-// 5. Cost Analysis (Text/JSON)
+// 4. Cost Analysis (Text/JSON)
 export const analyzeCost = async (prompt: string): Promise<string> => {
   // Simple text tasks use gemini-2.5-flash
   const ai = getAiClient();

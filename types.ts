@@ -3,7 +3,6 @@ export enum ViewState {
   TEXT_CREATIVE = 'TEXT_CREATIVE',
   IMAGE_CREATIVE = 'IMAGE_CREATIVE',
   IMAGE_EDIT = 'IMAGE_EDIT',
-  ANIMATION = 'ANIMATION',
   GALLERY = 'GALLERY',
   COST_ANALYSIS = 'COST_ANALYSIS'
 }
@@ -18,7 +17,7 @@ export enum AspectRatio {
 
 export interface GeneratedItem {
   id: string;
-  type: 'image' | 'video' | 'text';
+  type: 'image' | 'text';
   url?: string;
   content?: string;
   timestamp: number;
@@ -35,8 +34,6 @@ export interface CostAnalysisData {
   renovationDetails?: string;
 }
 
-// Augment the global Window interface
-// AIStudio is defined in the global scope to allow interface merging if it exists elsewhere
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;

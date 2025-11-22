@@ -3,8 +3,8 @@ import { ViewState, AspectRatio, GeneratedItem } from './types';
 import CircularDashboard from './components/CircularDashboard';
 import ModuleLayout from './components/ModuleLayout';
 import DrawingCanvas from './components/DrawingCanvas';
-import { generateImageFromText, generateCreativeImage, editImage, generateVideo, analyzeCost } from './services/geminiService';
-import { Type, Image as ImageIcon, Edit3, Film, Grid, DollarSign, Loader2, Download } from 'lucide-react';
+import { generateImageFromText, generateCreativeImage, editImage, analyzeCost } from './services/geminiService';
+import { Type, Image as ImageIcon, Edit3, Grid, DollarSign, Loader2, Download } from 'lucide-react';
 
 // Reusable Red Title Block - Updated for Red Background with Black Text
 const SectionTitle: React.FC<{ title: string, sub: string }> = ({ title, sub }) => (
@@ -30,16 +30,12 @@ function App() {
   const [img1, setImg1] = useState<string | null>(null);
   const [img2, setImg2] = useState<string | null>(null);
 
-  // Animation States
-  const [animMode, setAnimMode] = useState<'text'|'image'|'firstlast'>('text');
-  const [animLastFrame, setAnimLastFrame] = useState<string | null>(null);
-
   // Cost States
   const [costMode, setCostMode] = useState<'new'|'renovation'>('new');
   const [costData, setCostData] = useState<any>({}); // Form data
   const [costResult, setCostResult] = useState<any>(null);
 
-  const addToGallery = (type: 'image' | 'video' | 'text', content: string, promptText: string) => {
+  const addToGallery = (type: 'image' | 'text', content: string, promptText: string) => {
     setGeneratedItems(prev => [{
       id: Date.now().toString(),
       type,
@@ -106,31 +102,6 @@ function App() {
       addToGallery('image', url, prompt);
     } catch (e) {
       alert("Edit failed.");
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAnimation = async () => {
-    if (!prompt) { alert("Prompt required"); return; }
-    setLoading(true);
-    setResult(null);
-    try {
-      let url;
-      if (animMode === 'text') {
-        url = await generateVideo(prompt);
-      } else if (animMode === 'image') {
-        if (!img1) throw new Error("Start image required");
-        url = await generateVideo(prompt, img1);
-      } else {
-        if (!img1 || !animLastFrame) throw new Error("Start and End frames required");
-        url = await generateVideo(prompt, img1, animLastFrame);
-      }
-      setResult(url);
-      addToGallery('video', url, prompt);
-    } catch (e) {
-      alert("Video generation failed. Please ensure you have a paid project selected via the key selector.");
       console.error(e);
     } finally {
       setLoading(false);
@@ -280,43 +251,6 @@ function App() {
     </div>
   );
 
-  const renderAnimation = () => (
-    <div className="grid md:grid-cols-2 gap-8">
-      <div className="space-y-6">
-        <SectionTitle title="动画生成" sub="Animation Generation" />
-        <div className="flex flex-wrap gap-2 mb-4">
-           <button onClick={() => setAnimMode('text')} className={`px-3 py-1 rounded text-sm border ${animMode === 'text' ? 'bg-mr-red text-white' : 'bg-white'}`}>Text-to-Video</button>
-           <button onClick={() => setAnimMode('image')} className={`px-3 py-1 rounded text-sm border ${animMode === 'image' ? 'bg-mr-red text-white' : 'bg-white'}`}>Image-to-Video</button>
-           <button onClick={() => setAnimMode('firstlast')} className={`px-3 py-1 rounded text-sm border ${animMode === 'firstlast' ? 'bg-mr-red text-white' : 'bg-white'}`}>First/Last Frame</button>
-        </div>
-
-        {animMode !== 'text' && (
-             <DrawingCanvas label="Start Frame" onImageChange={setImg1} allowDrawing={false} />
-        )}
-        {animMode === 'firstlast' && (
-             <DrawingCanvas label="End Frame" onImageChange={setAnimLastFrame} allowDrawing={false} />
-        )}
-
-        <textarea
-          className="w-full border-2 border-slate-300 p-4 rounded-lg h-24"
-          placeholder="Describe the motion..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-        <button onClick={handleAnimation} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center">
-           {loading ? <Loader2 className="animate-spin mr-2" /> : "生成 Animation"}
-        </button>
-      </div>
-       <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center min-h-[400px]">
-        {result ? (
-          <video src={result} controls autoPlay loop className="max-w-full max-h-full rounded shadow-lg" />
-        ) : (
-          <span className="text-slate-400 font-zongyi">Video Preview</span>
-        )}
-      </div>
-    </div>
-  );
-
   const renderCostAnalysis = () => (
     <div className="grid md:grid-cols-2 gap-8">
       <div className="space-y-6">
@@ -391,9 +325,7 @@ function App() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {generatedItems.map((item) => (
           <div key={item.id} className="group relative bg-white rounded-lg shadow overflow-hidden border border-slate-200">
-            {item.type === 'video' ? (
-              <video src={item.url} className="w-full h-48 object-cover bg-black" />
-            ) : item.type === 'text' ? (
+            {item.type === 'text' ? (
               <div className="w-full h-48 p-4 text-xs overflow-hidden bg-slate-50 text-slate-600">
                 {item.prompt}
               </div>
@@ -407,7 +339,7 @@ function App() {
             {item.url && (
               <a 
                 href={item.url} 
-                download={`generated-${item.id}.${item.type === 'video' ? 'mp4' : 'png'}`}
+                download={`generated-${item.id}.png`}
                 className="absolute top-2 right-2 p-2 bg-white/90 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <Download className="w-4 h-4 text-slate-700" />
@@ -434,7 +366,6 @@ function App() {
         currentView === ViewState.TEXT_CREATIVE ? '文字创意 Text Creative' :
         currentView === ViewState.IMAGE_CREATIVE ? '图片创意 Image Creative' :
         currentView === ViewState.IMAGE_EDIT ? '图片编辑 Image Edit' :
-        currentView === ViewState.ANIMATION ? '动画生成 Animation' :
         currentView === ViewState.COST_ANALYSIS ? '造价分析 Cost Analysis' :
         '生成图片库 Gallery'
       }
@@ -442,7 +373,6 @@ function App() {
         currentView === ViewState.TEXT_CREATIVE ? <Type /> :
         currentView === ViewState.IMAGE_CREATIVE ? <ImageIcon /> :
         currentView === ViewState.IMAGE_EDIT ? <Edit3 /> :
-        currentView === ViewState.ANIMATION ? <Film /> :
         currentView === ViewState.COST_ANALYSIS ? <DollarSign /> :
         <Grid />
       }
@@ -451,7 +381,6 @@ function App() {
       {currentView === ViewState.TEXT_CREATIVE && renderTextCreative()}
       {currentView === ViewState.IMAGE_CREATIVE && renderImageCreative()}
       {currentView === ViewState.IMAGE_EDIT && renderImageEdit()}
-      {currentView === ViewState.ANIMATION && renderAnimation()}
       {currentView === ViewState.COST_ANALYSIS && renderCostAnalysis()}
       {currentView === ViewState.GALLERY && renderGallery()}
     </ModuleLayout>

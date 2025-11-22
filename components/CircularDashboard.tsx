@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Type, Image, Edit3, Film, Grid, DollarSign, PenTool } from 'lucide-react';
+import { Type, Image, Edit3, Grid, DollarSign, PenTool } from 'lucide-react';
 
 interface CircularDashboardProps {
   onNavigate: (view: ViewState) => void;
@@ -12,7 +12,6 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
     { id: ViewState.TEXT_CREATIVE, label: '文字创意\nText Creative', icon: <Type className="w-6 h-6" />, color: 'bg-blue-500' },
     { id: ViewState.IMAGE_CREATIVE, label: '图片创意\nImage Creative', icon: <Image className="w-6 h-6" />, color: 'bg-emerald-500' },
     { id: ViewState.IMAGE_EDIT, label: '图片编辑\nImage Edit', icon: <Edit3 className="w-6 h-6" />, color: 'bg-purple-500' },
-    { id: ViewState.ANIMATION, label: '动画\nAnimation', icon: <Film className="w-6 h-6" />, color: 'bg-orange-500' },
     { id: ViewState.GALLERY, label: '生成图片库\nGallery', icon: <Grid className="w-6 h-6" />, color: 'bg-pink-500' },
     { id: ViewState.COST_ANALYSIS, label: '造价分析\nCost Analysis', icon: <DollarSign className="w-6 h-6" />, color: 'bg-slate-600' },
   ];
@@ -43,7 +42,6 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
           const total = menuItems.length;
           // Calculate position on the circle
           const angle = (index * (360 / total)) - 90; // -90 to start at top
-          const radius = 160; // desktop radius adjustment needed via transform usually
           
           return (
             <button
