@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ViewState, AspectRatio, GeneratedItem, CostAnalysisData } from './types';
 import CircularDashboard from './components/CircularDashboard';
 import ModuleLayout from './components/ModuleLayout';
 import DrawingCanvas from './components/DrawingCanvas';
 import { generateImageFromText, generateCreativeImage, editImage, generateCostAnalysis } from './services/geminiService';
-import { Type, Image as ImageIcon, Edit3, Grid, Loader2, Download, Calculator } from 'lucide-react';
+import { Type, Image as ImageIcon, Edit3, Grid, Loader2, Download, Calculator, Key, AlertTriangle } from 'lucide-react';
 
 // Reusable Red Title Block - Updated for Red Background with Black Text
 const SectionTitle: React.FC<{ title: string, sub: string }> = ({ title, sub }) => (
@@ -20,6 +20,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
   
+  // API Key State
+  const [isKeyValid, setIsKeyValid] = useState(true);
+  const [needsKeySelection, setNeedsKeySelection] = useState(false);
+
   // Shared States
   const [prompt, setPrompt] = useState('');
   const [result, setResult] = useState<string | null>(null);
@@ -42,10 +46,59 @@ function App() {
   });
   const [costResult, setCostResult] = useState<string | null>(null);
 
+  // Check API Key on Mount
+  useEffect(() => {
+    const checkKey = async () => {
+      // 1. If process.env.API_KEY is already set (e.g. via Vercel Env Vars), we are good.
+      if (process.env.API_KEY) {
+        setIsKeyValid(true);
+        return;
+      }
+
+      // 2. If not, check if we are in an environment that supports dynamic key selection (like AI Studio / IDX)
+      if (window.aistudio) {
+        try {
+          const hasSelected = await window.aistudio.hasSelectedApiKey();
+          if (!hasSelected) {
+            setNeedsKeySelection(true);
+            setIsKeyValid(false);
+          } else {
+            setIsKeyValid(true);
+          }
+        } catch (e) {
+          console.error("Error checking AI Studio key:", e);
+          setIsKeyValid(false);
+        }
+      } else {
+        // 3. No key and no helper -> Missing Config
+        setIsKeyValid(false);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleSelectKey = async () => {
+    if (window.aistudio) {
+      try {
+        await window.aistudio.openSelectKey();
+        // Assume success if no error, reload state
+        setNeedsKeySelection(false);
+        setIsKeyValid(true);
+      } catch (e) {
+        console.error("Key selection failed:", e);
+      }
+    }
+  };
+
   const handleError = (e: any) => {
     console.error(e);
     const msg = e instanceof Error ? e.message : "Unknown error occurred";
-    alert(`Error: ${msg}\n\nIf deploying, check your API Key configuration.`);
+    // Using a simple alert for operational errors, but key errors are handled by state
+    if (msg.includes("API_KEY")) {
+        setIsKeyValid(false);
+    } else {
+        alert(`Error: ${msg}`);
+    }
   };
 
   const addToGallery = (type: 'image' | 'text', content: string, promptText: string) => {
@@ -141,6 +194,62 @@ function App() {
     setImg2(null);
     setCostResult(null);
   };
+
+  // --- API Key Missing Screen ---
+  if (!isKeyValid) {
+    return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-slate-200">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Key className="w-8 h-8 text-mr-red" />
+                </div>
+                <h2 className="text-2xl font-zongyi text-slate-900 mb-4">Configuration Needed</h2>
+                
+                {needsKeySelection ? (
+                    <div className="space-y-4">
+                        <p className="text-slate-600 mb-6">
+                            To start designing with AI, please select your Google Gemini API Key.
+                        </p>
+                        <button 
+                            onClick={handleSelectKey}
+                            className="w-full bg-mr-red text-white py-3 rounded-lg font-bold shadow hover:bg-red-700 transition-all"
+                        >
+                            Select API Key
+                        </button>
+                        <p className="text-xs text-slate-400 mt-4">
+                            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="underline hover:text-mr-red">
+                                Learn about billing
+                            </a>
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                         <p className="text-slate-600">
+                            The <code>API_KEY</code> environment variable is missing. 
+                        </p>
+                        <div className="bg-slate-100 p-4 rounded-lg text-left text-sm text-slate-700 border border-slate-200">
+                            <p className="font-semibold mb-2 flex items-center"><AlertTriangle className="w-4 h-4 mr-2 text-orange-500"/> If you are deploying to Vercel:</p>
+                            <ol className="list-decimal list-inside space-y-1 ml-1">
+                                <li>Go to your Vercel Project Dashboard.</li>
+                                <li>Click <strong>Settings</strong> → <strong>Environment Variables</strong>.</li>
+                                <li>Add a new variable named <code>API_KEY</code>.</li>
+                                <li>Paste your Google Gemini API Key as the value.</li>
+                                <li>Redeploy your application.</li>
+                            </ol>
+                        </div>
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="mt-4 px-6 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 transition-colors"
+                        >
+                            I have added the key, Refresh
+                        </button>
+                    </div>
+                )}
+            </div>
+            <div className="mt-8 text-slate-400 text-sm font-zongyi">Mr. Just Right - AI Design Workshop</div>
+        </div>
+    );
+  }
 
   // --- Render Methods for each Module ---
 

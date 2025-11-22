@@ -1,10 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { CostAnalysisData } from "../types";
 
+// Safe retrieval of API Key from environment
 const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
+  // Safe access to process.env
+  const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+
   if (!apiKey) {
-    throw new Error("API_KEY is missing. Please set it in your environment variables.");
+    // Throwing a specific error to be caught by the UI layer
+    throw new Error("API_KEY is missing. Please check your Vercel Environment Variables.");
   }
   return new GoogleGenAI({ apiKey });
 };
