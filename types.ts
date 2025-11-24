@@ -3,6 +3,8 @@ export enum ViewState {
   TEXT_CREATIVE = 'TEXT_CREATIVE',
   IMAGE_CREATIVE = 'IMAGE_CREATIVE',
   IMAGE_EDIT = 'IMAGE_EDIT',
+  ANIMATION = 'ANIMATION',
+  THREED_MODEL = 'THREED_MODEL',
   GALLERY = 'GALLERY',
   COST_ANALYSIS = 'COST_ANALYSIS'
 }
@@ -17,7 +19,7 @@ export enum AspectRatio {
 
 export interface GeneratedItem {
   id: string;
-  type: 'image' | 'text';
+  type: 'image' | 'text' | 'video';
   url?: string;
   content?: string;
   timestamp: number;
@@ -32,6 +34,7 @@ export interface CostAnalysisData {
   structure: string;
   facade: string;
   renovationScope: string;
+  images?: string[]; // Array of base64 image strings
 }
 
 declare global {

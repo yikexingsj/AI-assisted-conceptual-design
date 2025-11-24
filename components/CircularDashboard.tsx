@@ -1,24 +1,69 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Type, Image, Edit3, Grid, PenTool, Calculator } from 'lucide-react';
+import { Type, Image, Edit3, Grid, Calculator, Film, Box } from 'lucide-react';
 
 interface CircularDashboardProps {
   onNavigate: (view: ViewState) => void;
 }
 
 const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => {
-  
-  // Updated colors to match "赤橙黄绿青" (Red, Orange, Yellow, Green, Cyan)
+  // Menu Items - Updated with 7 distinct colors
   const menuItems = [
-    { id: ViewState.TEXT_CREATIVE, label: '文字创意\nText Creative', icon: <Type className="w-6 h-6" />, color: 'bg-red-500' },
-    { id: ViewState.IMAGE_CREATIVE, label: '图片创意\nImage Creative', icon: <Image className="w-6 h-6" />, color: 'bg-orange-500' },
-    { id: ViewState.IMAGE_EDIT, label: '图片编辑\nImage Edit', icon: <Edit3 className="w-6 h-6" />, color: 'bg-yellow-500' },
-    { id: ViewState.COST_ANALYSIS, label: '造价分析\nCost Analysis', icon: <Calculator className="w-6 h-6" />, color: 'bg-green-500' },
-    { id: ViewState.GALLERY, label: '生成图片库\nGallery', icon: <Grid className="w-6 h-6" />, color: 'bg-cyan-500' },
+    { 
+      id: ViewState.TEXT_CREATIVE, 
+      label: '文字创意\nCreative', 
+      icon: <Type className="w-6 h-6" />, 
+      color: 'text-blue-600',
+      hoverBorder: 'hover:border-blue-600',
+    },
+    { 
+      id: ViewState.IMAGE_CREATIVE, 
+      label: '图片创意\nImage', 
+      icon: <Image className="w-6 h-6" />, 
+      color: 'text-violet-600',
+      hoverBorder: 'hover:border-violet-600',
+    },
+    { 
+      id: ViewState.IMAGE_EDIT, 
+      label: '图片编辑\nEdit', 
+      icon: <Edit3 className="w-6 h-6" />, 
+      color: 'text-cyan-600',
+      hoverBorder: 'hover:border-cyan-600',
+    },
+    { 
+      id: ViewState.ANIMATION, 
+      label: '漫游动画\nAnim', 
+      icon: <Film className="w-6 h-6" />, 
+      color: 'text-rose-500',
+      hoverBorder: 'hover:border-rose-500',
+    },
+    { 
+      id: ViewState.THREED_MODEL, 
+      label: '三维模型\n3D Model', 
+      icon: <Box className="w-6 h-6" />, 
+      color: 'text-amber-500',
+      hoverBorder: 'hover:border-amber-500',
+    },
+    { 
+      id: ViewState.COST_ANALYSIS, 
+      label: '造价分析\nCost', 
+      icon: <Calculator className="w-6 h-6" />, 
+      color: 'text-emerald-600',
+      hoverBorder: 'hover:border-emerald-600',
+    },
+    { 
+      id: ViewState.GALLERY, 
+      label: '生成库\nGallery', 
+      icon: <Grid className="w-6 h-6" />, 
+      color: 'text-indigo-600',
+      hoverBorder: 'hover:border-indigo-600',
+    },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white relative overflow-hidden">
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-white"
+    >
       
       <style>{`
         @keyframes orbit {
@@ -30,19 +75,17 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
           to { transform: rotate(0deg); }
         }
         .animate-orbit {
-          animation: orbit 30s linear infinite;
+          animation: orbit 40s linear infinite;
         }
         .animate-orbit-reverse {
-          animation: orbit-reverse 30s linear infinite;
+          animation: orbit-reverse 40s linear infinite;
         }
         
-        /* Pause animations on hover for easier interaction */
         .orbit-container:hover .animate-orbit,
         .orbit-container:hover .animate-orbit-reverse {
           animation-play-state: paused;
         }
         
-        /* Responsive Radius Variables */
         :root {
            --orbit-radius: 140px;
         }
@@ -53,37 +96,76 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
         }
       `}</style>
 
-      {/* Decorative subtle architectural lines */}
-      <div className="absolute inset-0 pointer-events-none opacity-10">
-          <div className="absolute top-0 left-1/2 w-px h-full bg-slate-900"></div>
-          <div className="absolute left-0 top-1/2 w-full h-px bg-slate-900"></div>
-          <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 border border-slate-900 rounded-full"></div>
+      {/* Decorative architectural lines & Perfect Circle Background */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0 opacity-10">
+          <div className="absolute w-px h-full bg-slate-900"></div>
+          <div className="absolute w-full h-px bg-slate-900"></div>
+          <div className="w-[85vmin] h-[85vmin] max-w-[800px] max-h-[800px] border rounded-full border-slate-900"></div>
       </div>
 
-      <div className="relative w-[350px] h-[350px] md:w-[600px] md:h-[600px] flex items-center justify-center orbit-container">
+      <div className="relative w-[350px] h-[350px] md:w-[600px] md:h-[600px] flex items-center justify-center orbit-container z-10">
         
-        {/* Center Logo (Static) */}
-        <div className="absolute z-20 flex flex-col items-center justify-center text-center p-6 bg-white rounded-full shadow-xl border-4 border-slate-100 w-48 h-48 md:w-64 md:h-64">
-           <PenTool className="w-12 h-12 text-mr-red mb-2" />
-           <h1 className="font-zongyi text-xl md:text-2xl leading-tight text-slate-900">
-             刚刚好先生<br/>
-             <span className="text-mr-red text-lg md:text-xl">Ai设计坊</span>
-           </h1>
+        {/* Dashed Orbit Ring - Connects the outer circles */}
+        <div 
+          className="absolute rounded-full border-2 border-dashed border-slate-300/60 pointer-events-none"
+          style={{
+             width: 'calc(var(--orbit-radius) * 2)',
+             height: 'calc(var(--orbit-radius) * 2)',
+          }}
+        ></div>
+
+        {/* Center Logo - Chinese and English */}
+        <div className="absolute z-20 flex flex-col items-center justify-center text-center bg-white rounded-full shadow-2xl border-4 border-slate-50 w-48 h-48 md:w-64 md:h-64 overflow-hidden">
+           <div className="flex flex-col items-center justify-center w-full px-2">
+             {/* House Logo - Slightly smaller to fit english text */}
+             <svg 
+               viewBox="0 0 100 100" 
+               className="w-10 h-10 md:w-16 md:h-16 mb-2 text-mr-red flex-shrink-0" 
+               fill="none" 
+               stroke="currentColor" 
+               strokeWidth="4" 
+               strokeLinecap="round" 
+               strokeLinejoin="round"
+             >
+               <path d="M50 10 L85 45 L85 90 L58 90 L58 65 L42 65 L42 90 L15 90 L15 45 Z" />
+             </svg>
+             
+             {/* Chinese Text Block */}
+             <div className="flex flex-col items-center mb-1 md:mb-2">
+                <h1 className="font-zongyi text-gray-500 text-lg md:text-3xl leading-none mb-1 tracking-wide whitespace-nowrap">
+                刚刚好先生
+                </h1>
+                <h2 className="font-zongyi text-gray-500 text-sm md:text-lg leading-none tracking-wide opacity-90">
+                AI设计坊
+                </h2>
+             </div>
+
+             {/* Divider Line */}
+             <div className="w-12 h-px bg-slate-200 mb-1 md:mb-2"></div>
+
+             {/* English Text Block */}
+             <div className="flex flex-col gap-0.5 items-center">
+                <p className="font-sans text-gray-500 text-[9px] md:text-[11px] uppercase tracking-widest scale-90 md:scale-100 font-medium">
+                    Mr. Just Right
+                </p>
+                <p className="font-sans text-gray-400 text-[7px] md:text-[9px] uppercase tracking-wider scale-90 md:scale-100">
+                    AI Design Workshop
+                </p>
+             </div>
+           </div>
         </div>
 
         {/* Rotating Container for Menu Items */}
         <div className="absolute inset-0 animate-orbit pointer-events-none">
             {menuItems.map((item, index) => {
             const total = menuItems.length;
-            // Calculate position on the circle
-            const angle = (index * (360 / total)) - 90; // -90 to start at top
+            const angle = (index * (360 / total)) - 90;
             
             return (
                 <div
                     key={item.id}
                     className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center pointer-events-auto"
                     style={{
-                        // Position the anchor point using CSS variable for responsive radius
                         transform: `rotate(${angle}deg) translate(var(--orbit-radius)) rotate(${-angle}deg)`,
                     }}
                 >
@@ -94,13 +176,15 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
                     <div className={`
                         flex flex-col items-center justify-center 
                         w-24 h-24 md:w-32 md:h-32 rounded-full 
-                        shadow-lg text-white border-4 border-white
+                        shadow-lg border-2
                         transition-all duration-300
-                        ${item.color} hover:shadow-2xl
+                        bg-white border-slate-200 
+                        ${item.hoverBorder}
+                        hover:shadow-xl
                         animate-orbit-reverse
                     `}>
-                        <div className="mb-1">{item.icon}</div>
-                        <span className="text-[10px] md:text-xs font-zongyi text-center whitespace-pre-line leading-tight">
+                        <div className={`mb-1 ${item.color}`}>{item.icon}</div>
+                        <span className="text-[10px] md:text-xs font-zongyi text-center whitespace-pre-line leading-tight text-gray-500">
                         {item.label}
                         </span>
                     </div>
@@ -111,7 +195,7 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
         </div>
       </div>
 
-      <footer className="absolute bottom-8 text-slate-400 text-sm font-zongyi">
+      <footer className="absolute bottom-8 text-sm font-zongyi z-10 text-slate-400">
         Mr. Just Right - Architecture AI
       </footer>
     </div>
