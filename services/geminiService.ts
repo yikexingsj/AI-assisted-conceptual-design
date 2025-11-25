@@ -1,6 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { CostAnalysisData } from "../types";
 
+// Declare process to avoid TypeScript build errors in browser environments
+declare const process: { env: any };
+
 // Safe retrieval of API Key from environment
 const getAiClient = () => {
   // Safe access to process.env
