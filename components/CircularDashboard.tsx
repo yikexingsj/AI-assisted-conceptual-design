@@ -7,56 +7,56 @@ interface CircularDashboardProps {
 }
 
 const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => {
-  // Menu Items - Updated with 7 distinct colors
+  // Menu Items - Updated with rainbow colors: 赤橙黄绿青蓝紫
   const menuItems = [
     { 
       id: ViewState.TEXT_CREATIVE, 
       label: '文字创意\nCreative', 
       icon: <Type className="w-6 h-6" />, 
-      color: 'text-blue-600',
-      hoverBorder: 'hover:border-blue-600',
+      color: 'text-red-600',
+      hoverBorder: 'hover:border-red-600',
     },
     { 
       id: ViewState.IMAGE_CREATIVE, 
       label: '图片创意\nImage', 
       icon: <Image className="w-6 h-6" />, 
-      color: 'text-violet-600',
-      hoverBorder: 'hover:border-violet-600',
+      color: 'text-orange-500',
+      hoverBorder: 'hover:border-orange-500',
     },
     { 
       id: ViewState.IMAGE_EDIT, 
       label: '图片编辑\nEdit', 
       icon: <Edit3 className="w-6 h-6" />, 
-      color: 'text-cyan-600',
-      hoverBorder: 'hover:border-cyan-600',
+      color: 'text-yellow-500',
+      hoverBorder: 'hover:border-yellow-500',
     },
     { 
       id: ViewState.ANIMATION, 
       label: '漫游动画\nAnim', 
       icon: <Film className="w-6 h-6" />, 
-      color: 'text-rose-500',
-      hoverBorder: 'hover:border-rose-500',
+      color: 'text-green-600',
+      hoverBorder: 'hover:border-green-600',
     },
     { 
       id: ViewState.THREED_MODEL, 
       label: '三维模型\n3D Model', 
       icon: <Box className="w-6 h-6" />, 
-      color: 'text-amber-500',
-      hoverBorder: 'hover:border-amber-500',
+      color: 'text-cyan-500',
+      hoverBorder: 'hover:border-cyan-500',
     },
     { 
       id: ViewState.COST_ANALYSIS, 
       label: '造价分析\nCost', 
       icon: <Calculator className="w-6 h-6" />, 
-      color: 'text-emerald-600',
-      hoverBorder: 'hover:border-emerald-600',
+      color: 'text-blue-600',
+      hoverBorder: 'hover:border-blue-600',
     },
     { 
       id: ViewState.GALLERY, 
       label: '生成库\nGallery', 
       icon: <Grid className="w-6 h-6" />, 
-      color: 'text-indigo-600',
-      hoverBorder: 'hover:border-indigo-600',
+      color: 'text-purple-600',
+      hoverBorder: 'hover:border-purple-600',
     },
   ];
 
@@ -132,7 +132,8 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
              
              {/* Chinese Text Block */}
              <div className="flex flex-col items-center mb-1 md:mb-2">
-                <h1 className="font-zongyi text-gray-500 text-lg md:text-3xl leading-none mb-1 tracking-wide whitespace-nowrap">
+                {/* Zongyi font looks better slightly larger */}
+                <h1 className="font-zongyi text-gray-500 text-xl md:text-4xl leading-none mb-1 tracking-wide whitespace-nowrap">
                 刚刚好先生
                 </h1>
                 <h2 className="font-zongyi text-gray-500 text-sm md:text-lg leading-none tracking-wide opacity-90">
