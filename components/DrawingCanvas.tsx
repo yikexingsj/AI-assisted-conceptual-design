@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Eraser, Pen, Upload, Trash2, Activity, Circle, Square, Diamond, Undo, Redo, PenTool, Pencil, Droplet, Waves, Slash, Triangle } from 'lucide-react';
+import { Eraser, Pen, Upload, Trash2, Activity, Circle, Square, Diamond, Undo, Redo, PenTool, Pencil, Droplet, Waves, Slash, Triangle, Maximize, Minimize } from 'lucide-react';
 
 interface DrawingCanvasProps {
   onImageChange: (base64: string | null) => void;
@@ -23,6 +23,10 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
   const [brushStyle, setBrushStyle] = useState<BrushStyle>('solid');
   const [smoothing, setSmoothing] = useState(true);
   const [brushShape, setBrushShape] = useState<BrushShape>('round');
+  
+  // Fullscreen and Size State
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [canvasSize, setCanvasSize] = useState({ width: 512, height: 512 });
 
   // History Management
   const [history, setHistory] = useState<string[]>([]);
@@ -38,7 +42,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
   const PRESET_COLORS = ['#000000', '#D32F2F', '#1976D2', '#388E3C', '#FBC02D'];
   const BRUSH_SIZES = [1, 2, 4, 8, 16, 24, 48];
 
-  // Initial setup
+  // Initial setup - Blank Canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -52,7 +56,46 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
         setHistoryStep(0);
       }
     }
-  }, []);
+  }, []); // Only runs once on mount, but size changes handle their own redraw
+
+  // Fullscreen Resize Logic
+  useEffect(() => {
+    const handleResize = () => {
+        if (isFullScreen) {
+             // Fullscreen: subtract approx toolbar/padding height
+             // Using mostly window size to maximize space
+             setCanvasSize({ width: window.innerWidth - 32, height: window.innerHeight - 100 });
+        } else {
+             // Normal: Fixed high res 512x512
+             setCanvasSize({ width: 512, height: 512 });
+        }
+    };
+    
+    // Initial call
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isFullScreen]);
+
+  // Restore image content when canvas size changes
+  useEffect(() => {
+      // If we have data, we must redraw it on the resized canvas
+      if (lastExportedRef.current) {
+          const src = `data:image/png;base64,${lastExportedRef.current}`;
+          fitAndDrawNewImage(src, false); // Don't add resize events to history stack
+      } else {
+          // If no image, just clear to white
+          const canvas = canvasRef.current;
+          if (canvas) {
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+              }
+          }
+      }
+  }, [canvasSize]);
 
   // Helper: Save current state to history
   const saveToHistory = () => {
@@ -68,38 +111,13 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
     setHistoryStep(newHistory.length - 1);
   };
 
-  // Helper: Load image from string onto canvas
+  // Helper: Load image from string onto canvas (stretch/fit logic handled in fitAndDrawNewImage)
   const loadImageOnCanvas = (src: string, callback?: () => void) => {
-    const img = new Image();
-    img.onload = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // Clear and draw image fitted
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.globalAlpha = 1.0;
-        ctx.shadowBlur = 0;
-        ctx.globalCompositeOperation = 'source-over';
-
-        if (src.startsWith('data:image/png;base64,') || src.startsWith('data:image/jpeg;base64,')) {
-            // Usually from history or generic data URL
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        } else {
-             // Fallback fitting for unknown sources if needed
-             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
-        
-        setHasImage(true);
-        if (callback) callback();
-    };
-    img.src = src;
+      fitAndDrawNewImage(src, false, callback);
   };
 
-  // Helper: Fit and draw a new external image (Upload or Prop)
-  const fitAndDrawNewImage = (src: string, recordHistory = true) => {
+  // Helper: Fit and draw a new external image (Upload or Prop or Restore)
+  const fitAndDrawNewImage = (src: string, recordHistory = true, callback?: () => void) => {
     const img = new Image();
     img.onload = () => {
         const canvas = canvasRef.current;
@@ -114,7 +132,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Simple aspect ratio fit
+        // Smart Fit: Maintain aspect ratio and center
         const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
         const x = (canvas.width / 2) - (img.width / 2) * scale;
         const y = (canvas.height / 2) - (img.height / 2) * scale;
@@ -127,6 +145,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
         if (recordHistory) {
             saveToHistory();
         }
+        if (callback) callback();
     };
     img.src = src;
   };
@@ -137,10 +156,11 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
         const prevStep = historyStep - 1;
         const prevImage = history[prevStep];
         setHistoryStep(prevStep);
-        loadImageOnCanvas(prevImage, () => {
-             // After loading, export current state to parent
-             exportImage();
-        });
+        // Note: History items are dataURLs. When drawing back, we should stretch them to fill canvas 
+        // if resolution changed, OR just use fit logic. 
+        // For simplicity, we assume history is valid for current session. 
+        // Using fit logic is safer if size changed.
+        fitAndDrawNewImage(prevImage, false); 
     }
   };
 
@@ -150,9 +170,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
         const nextStep = historyStep + 1;
         const nextImage = history[nextStep];
         setHistoryStep(nextStep);
-        loadImageOnCanvas(nextImage, () => {
-            exportImage();
-        });
+        fitAndDrawNewImage(nextImage, false);
     }
   };
 
@@ -446,12 +464,29 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
     saveToHistory(); // Save empty state
   };
 
+  const toggleFullScreen = () => {
+      setIsFullScreen(!isFullScreen);
+  };
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap justify-between items-end gap-2">
-        <label className="font-zongyi text-lg text-slate-700">{label}</label>
+    <div className={`transition-all duration-300 ${isFullScreen ? 'fixed inset-0 z-50 bg-slate-100 flex flex-col' : 'flex flex-col gap-2'}`}>
+      
+      {/* Toolbar */}
+      <div className={`flex flex-wrap justify-between items-end gap-2 bg-white ${isFullScreen ? 'p-4 shadow-md z-10' : ''}`}>
+        <label className="font-zongyi text-lg text-slate-700 flex items-center gap-2">
+            {label}
+            {isFullScreen && <span className="text-xs bg-mr-red text-white px-2 py-0.5 rounded">FULLSCREEN</span>}
+        </label>
         
         <div className="flex flex-wrap items-center gap-2">
+             <button 
+              onClick={toggleFullScreen}
+              className={`p-2 rounded border transition-colors ${isFullScreen ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}`}
+              title={isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
+             >
+                {isFullScreen ? <Minimize className="w-4 h-4"/> : <Maximize className="w-4 h-4"/>}
+             </button>
+
              <label className="cursor-pointer p-2 hover:bg-gray-100 rounded border border-gray-300 bg-white shadow-sm transition-colors" title="Upload Image">
               <Upload className="w-4 h-4 text-slate-600" />
               <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
@@ -647,16 +682,24 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ onImageChange, label, all
           </button>
         </div>
       </div>
-      <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow-inner">
+      
+      {/* Canvas Area */}
+      <div className={`
+          ${isFullScreen 
+            ? 'flex-1 flex items-center justify-center p-4 overflow-hidden relative' 
+            : 'border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow-inner relative'}
+      `}>
+         {isFullScreen && <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNjY2MiIG9wYWNpdHk9IjAuNSIvPjwvc3ZnPg==')] opacity-20 pointer-events-none"></div>}
+         
         <canvas
           ref={canvasRef}
-          width={400}
-          height={400}
+          width={canvasSize.width}
+          height={canvasSize.height}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
           onMouseLeave={stopDrawing}
-          className="w-full h-auto cursor-crosshair touch-none"
+          className={`cursor-crosshair touch-none bg-white shadow-lg ${isFullScreen ? 'max-w-full max-h-full border border-slate-300' : 'w-full h-auto'}`}
         />
       </div>
     </div>
