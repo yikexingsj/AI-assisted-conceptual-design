@@ -1,3 +1,4 @@
+
 export enum ViewState {
   DASHBOARD = 'DASHBOARD',
   TEXT_CREATIVE = 'TEXT_CREATIVE',
@@ -24,6 +25,14 @@ export interface GeneratedItem {
   content?: string;
   timestamp: number;
   prompt: string;
+}
+
+export interface User {
+  username: string;
+  password?: string; // In a real app, never store plain text passwords
+  credits: number;
+  isPro: boolean;
+  planName?: string;
 }
 
 export interface CostAnalysisData {

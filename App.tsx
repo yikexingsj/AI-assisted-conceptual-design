@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { ViewState, AspectRatio, GeneratedItem, CostAnalysisData } from './types';
+import { ViewState, AspectRatio, GeneratedItem, CostAnalysisData, User } from './types';
 import CircularDashboard from './components/CircularDashboard';
 import ModuleLayout from './components/ModuleLayout';
 import DrawingCanvas from './components/DrawingCanvas';
+// AuthScreen removed
 import { 
   generateImageFromText, 
   generateCreativeImage, 
@@ -18,9 +20,9 @@ import {
   sendChatMessage,
   ChatMessage
 } from './services/geminiService';
-import { Type, Image as ImageIcon, Edit3, Grid, Loader2, Download, Calculator, Key, AlertTriangle, ArrowRightCircle, Plus, X, Layers, Film, PlayCircle, StepForward, Box, Cuboid, Upload, MessageSquare, Send, Trash2, User, Bot, Paperclip } from 'lucide-react';
+import { Type, Image as ImageIcon, Edit3, Grid, Loader2, Download, Calculator, Key, AlertTriangle, ArrowRightCircle, Plus, X, Layers, Film, PlayCircle, StepForward, Box, Cuboid, Upload, MessageSquare, Send, Trash2, User as UserIcon, Bot, Paperclip } from 'lucide-react';
 
-// Reusable Red Title Block - Updated for Red Background with Black Text
+// Reusable Red Title Block
 const SectionTitle: React.FC<{ title: string, sub: string }> = ({ title, sub }) => (
   <div className="mb-6 inline-block">
     <h2 className="bg-mr-red text-black px-4 py-2 text-lg font-zongyi tracking-wider shadow-md">
@@ -28,6 +30,15 @@ const SectionTitle: React.FC<{ title: string, sub: string }> = ({ title, sub }) 
     </h2>
   </div>
 );
+
+// Cost Constants
+const COSTS = {
+  IMAGE: 1,
+  CHAT: 0, // Free
+  VIDEO: 5,
+  THREED: 3,
+  COST_ANALYSIS: 2
+};
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
@@ -39,6 +50,14 @@ function App() {
   const [isKeyValid, setIsKeyValid] = useState(true);
   const [needsKeySelection, setNeedsKeySelection] = useState(false);
 
+  // Authentication & Credits State - Default Guest User
+  const [currentUser, setCurrentUser] = useState<User>({
+    username: 'Guest Designer',
+    credits: 9999,
+    isPro: true,
+    planName: 'Pro'
+  });
+
   // --- 1. TEXT CREATIVE STATE ---
   const [textCreativeTab, setTextCreativeTab] = useState<'image' | 'chat'>('image');
   // Text to Image
@@ -48,7 +67,7 @@ function App() {
   // Chat (Consultation)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [chatImage, setChatImage] = useState<string | null>(null); // For preview and upload
+  const [chatImage, setChatImage] = useState<string | null>(null); 
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // --- 2. IMAGE CREATIVE STATE ---
@@ -127,6 +146,17 @@ function App() {
     }
   }, [chatMessages, textCreativeTab]);
 
+  // --- Credits Logic ---
+
+  const deductCredits = (amount: number): boolean => {
+      if (currentUser.credits < amount) {
+          alert("积分不足 (Insufficient credits).");
+          return false;
+      }
+      setCurrentUser(prev => ({ ...prev, credits: prev.credits - amount }));
+      return true;
+  };
+
   const handleSelectKey = async () => {
     if (window.aistudio) {
       try {
@@ -164,6 +194,8 @@ function App() {
 
   const handleTextCreative = async () => {
     if (!textPrompt) return;
+    if (!deductCredits(COSTS.IMAGE)) return;
+
     setLoading(true);
     setTextResult(null);
     try {
@@ -190,16 +222,11 @@ function App() {
 
   const handleSendChat = async () => {
     if (!chatInput.trim() && !chatImage) return;
+    // Chat is currently free, or implement deduction if needed
+    // if (!deductCredits(COSTS.CHAT)) return;
     
     const newMessageText = chatInput.trim();
-    // Strip data prefix for service call, but keep full string for local display if needed
-    // The service expects raw base64.
     const imageBase64 = chatImage ? chatImage.split(',')[1] : undefined;
-    
-    // For local display state, we need to match the type structure.
-    // The image stored in state should be raw base64 to match ChatMessage interface if we want consistency,
-    // OR we change ChatMessage interface. 
-    // The service uses `image` as raw base64. Let's store raw base64 in the history state.
     
     const newMessage: ChatMessage = { 
         role: 'user', 
@@ -215,14 +242,10 @@ function App() {
     setLoading(true);
     
     try {
-      // Pass the previous history (before this new message) + the new message details to the service
-      // Or simply pass the OLD history and the NEW parameters.
-      // My service implementation appends the new message to history.
       const responseText = await sendChatMessage(chatMessages, newMessageText, imageBase64);
       setChatMessages(prev => [...prev, { role: 'model', text: responseText }]);
     } catch (e) {
       handleError(e);
-      // Optional: remove the failed message from UI
     } finally {
       setLoading(false);
     }
@@ -236,6 +259,8 @@ function App() {
 
   const handleImageCreative = async () => {
     if (!creativePrompt) { alert("Please enter a prompt"); return; }
+    if (!deductCredits(COSTS.IMAGE)) return;
+
     setLoading(true);
     setCreativeResult(null);
     try {
@@ -267,6 +292,8 @@ function App() {
 
   const handleImageEdit = async () => {
     if (!editInputImg || !editPrompt) { alert("Image and prompt required"); return; }
+    if (!deductCredits(COSTS.IMAGE)) return;
+
     setLoading(true);
     setEditResult(null);
     try {
@@ -282,6 +309,8 @@ function App() {
 
   const handle3DModelGenerate = async () => {
     if (!threeDPrompt) { alert("Please enter a description"); return; }
+    if (!deductCredits(COSTS.THREED)) return;
+
     setLoading(true);
     setThreeDResult(null);
     try {
@@ -305,6 +334,8 @@ function App() {
   };
 
   const handleCostAnalysis = async () => {
+    if (!deductCredits(COSTS.COST_ANALYSIS)) return;
+
     setLoading(true);
     setCostResult(null);
     try {
@@ -353,6 +384,7 @@ function App() {
 
   const handleAnimationGenerate = async () => {
     if (!animPrompt) { alert("Please enter a prompt"); return; }
+    if (!deductCredits(COSTS.VIDEO)) return;
     
     setLoading(true);
     setVideoResultUrl(null);
@@ -398,6 +430,11 @@ function App() {
   // Reset function for navigating back - ONLY CHANGES VIEW, PRESERVES STATE
   const goHome = () => {
     setCurrentView(ViewState.DASHBOARD);
+  };
+
+  const handleLogout = () => {
+    // Since we are in guest mode, just reload to reset session
+    window.location.reload();
   };
 
   // Multi Image Helpers
@@ -463,8 +500,7 @@ function App() {
                 disabled={loading}
                 className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 transition-colors flex justify-center items-center"
                 >
-                {loading ? <Loader2 className="animate-spin mr-2" /> : null}
-                生成 Generate
+                {loading ? <Loader2 className="animate-spin mr-2" /> : <span className="flex items-center gap-2">生成 Generate <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full">{COSTS.IMAGE} pts</span></span>}
                 </button>
             </div>
             <div className="flex flex-col gap-4">
@@ -543,7 +579,7 @@ function App() {
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${msg.role === 'user' ? 'bg-mr-red text-white rounded-br-none' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'}`}>
                             <div className="flex items-center gap-2 mb-1 opacity-80 text-xs font-bold uppercase tracking-wider">
-                                {msg.role === 'user' ? <User className="w-3 h-3"/> : <Bot className="w-3 h-3"/>}
+                                {msg.role === 'user' ? <UserIcon className="w-3 h-3"/> : <Bot className="w-3 h-3"/>}
                                 {msg.role === 'user' ? 'You' : 'Mr. Just Right'}
                             </div>
                             {msg.image && (
@@ -685,8 +721,8 @@ function App() {
                     </div>
                 </div>
                 
-                <button onClick={handleImageCreative} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center">
-                {loading ? <Loader2 className="animate-spin mr-2" /> : "生成 Generate"}
+                <button onClick={handleImageCreative} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center items-center">
+                {loading ? <Loader2 className="animate-spin mr-2" /> : <span className="flex items-center gap-2">生成 Generate <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full">{COSTS.IMAGE} pts</span></span>}
                 </button>
             </div>
             
@@ -780,8 +816,8 @@ function App() {
                 value={editPrompt}
                 onChange={(e) => setEditPrompt(e.target.value)}
                 />
-                <button onClick={handleImageEdit} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center">
-                {loading ? <Loader2 className="animate-spin mr-2" /> : "编辑 Edit"}
+                <button onClick={handleImageEdit} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center items-center">
+                {loading ? <Loader2 className="animate-spin mr-2" /> : <span className="flex items-center gap-2">编辑 Edit <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full">{COSTS.IMAGE} pts</span></span>}
                 </button>
             </div>
             
@@ -892,7 +928,7 @@ function App() {
             className={`w-full text-white py-3 rounded-lg font-zongyi text-lg flex justify-center items-center gap-2 transition-colors ${loading || (animTab === 'edit' && !lastVideoOperation) ? 'bg-slate-300' : 'bg-purple-700 hover:bg-purple-800'}`}
           >
              {loading ? <Loader2 className="animate-spin" /> : <PlayCircle className="w-5 h-5" />}
-             {loading ? 'Generating...' : '生成动画 Generate Video'}
+             {loading ? 'Generating...' : <span className="flex items-center gap-2">生成动画 Generate Video <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full">{COSTS.VIDEO} pts</span></span>}
           </button>
           
           {loading && loadingMessage && (
@@ -974,7 +1010,7 @@ function App() {
             className={`w-full text-white py-3 rounded-lg font-zongyi text-lg flex justify-center items-center gap-2 transition-colors ${loading ? 'bg-slate-300' : 'bg-orange-600 hover:bg-orange-700'}`}
           >
              {loading ? <Loader2 className="animate-spin" /> : <Box className="w-5 h-5" />}
-             {loading ? 'Processing...' : '生成模型视图 Generate View'}
+             {loading ? 'Processing...' : <span className="flex items-center gap-2">生成模型视图 Generate View <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full">{COSTS.THREED} pts</span></span>}
           </button>
           
           <p className="text-xs text-slate-400 italic text-center">
@@ -1123,8 +1159,8 @@ function App() {
             </div>
         )}
 
-        <button onClick={handleCostAnalysis} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center">
-           {loading ? <Loader2 className="animate-spin mr-2" /> : "开始分析 Analyze"}
+        <button onClick={handleCostAnalysis} disabled={loading} className="w-full bg-mr-red text-white py-3 rounded-lg font-zongyi text-lg hover:bg-red-700 flex justify-center items-center">
+           {loading ? <Loader2 className="animate-spin mr-2" /> : <span className="flex items-center gap-2">开始分析 Analyze <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full">{COSTS.COST_ANALYSIS} pts</span></span>}
         </button>
       </div>
 
@@ -1184,6 +1220,7 @@ function App() {
 
   // --- Main View Controller ---
 
+  // 1. Check API Key validity FIRST
   if (!isKeyValid) {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
@@ -1239,8 +1276,15 @@ function App() {
     );
   }
 
+  // 2. Render Main App (Auth check removed)
   if (currentView === ViewState.DASHBOARD) {
-    return <CircularDashboard onNavigate={setCurrentView} />;
+    return (
+        <CircularDashboard 
+            onNavigate={setCurrentView} 
+            currentUser={currentUser} 
+            onLogout={handleLogout} 
+        />
+    );
   }
 
   return (

@@ -1,12 +1,15 @@
+
 import React from 'react';
-import { ViewState } from '../types';
-import { Type, Image, Edit3, Grid, Calculator, Film, Box } from 'lucide-react';
+import { ViewState, User } from '../types';
+import { Type, Image, Edit3, Grid, Calculator, Film, Box, User as UserIcon, Crown, Coins } from 'lucide-react';
 
 interface CircularDashboardProps {
   onNavigate: (view: ViewState) => void;
+  currentUser?: User;
+  onLogout: () => void;
 }
 
-const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => {
+const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate, currentUser, onLogout }) => {
   // Menu Items - Updated with rainbow colors: 赤橙黄绿青蓝紫
   const menuItems = [
     { 
@@ -102,6 +105,27 @@ const CircularDashboard: React.FC<CircularDashboardProps> = ({ onNavigate }) => 
           <div className="absolute w-full h-px bg-slate-900"></div>
           <div className="w-[85vmin] h-[85vmin] max-w-[800px] max-h-[800px] border rounded-full border-slate-900"></div>
       </div>
+
+      {/* User Status Top Right */}
+      {currentUser && (
+        <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2 animate-fadeIn">
+            <div className="flex items-center gap-2 text-slate-600 bg-white/80 px-4 py-2 rounded-full border border-slate-200 shadow-sm backdrop-blur-sm">
+                {currentUser.isPro ? <Crown className="w-4 h-4 text-yellow-500 fill-current" /> : <UserIcon className="w-4 h-4 text-mr-red" />}
+                <span className="font-zongyi text-sm pt-0.5">{currentUser.username}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+                <div 
+                    className="flex items-center gap-1.5 text-slate-600 bg-white/80 px-3 py-1.5 rounded-full border border-slate-200 shadow-sm backdrop-blur-sm"
+                    title="Available credits"
+                >
+                    <Coins className="w-3.5 h-3.5 text-yellow-500" />
+                    <span className="font-sans text-xs font-bold">{currentUser.credits}</span>
+                    <span className="text-[9px] text-slate-400 bg-slate-100 px-1 rounded">PTS</span>
+                </div>
+            </div>
+        </div>
+      )}
 
       <div className="relative w-[350px] h-[350px] md:w-[600px] md:h-[600px] flex items-center justify-center orbit-container z-10">
         
